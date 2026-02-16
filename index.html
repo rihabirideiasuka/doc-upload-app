@@ -118,9 +118,8 @@
 </div>
 
 <script>
-/* ========= ここだけあなたの /exec URLに変更 ========= */
+/* ====== あなたの /exec（埋め込み済み） ====== */
 const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyzk-A-tp_GHBAzEics5GZ1u5ReLdPB93Z_ormXtxElSB_Cdxin33qqgTwfbfvbFM59/exec';
-/* ============================================== */
 
 const MAX_FILES = 8;
 const MAX_BYTES = 20*1024*1024;
@@ -165,14 +164,12 @@ function requireKey(){
   }
   return true;
 }
-
 function disableAll(disabled){
   $('#pickBtn').disabled = disabled;
   $('#camBtn').disabled  = disabled;
   sendBtn.disabled       = disabled;
   $('#clearBtn').disabled= disabled;
 }
-
 function getSelectedDestIds(){
   return Array.from(destBox.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value);
 }
@@ -199,10 +196,8 @@ function jsonp(url){
   });
 }
 
-/** ===== 送信先をスプレッドシートから取得（増減に強い） ===== */
 async function loadDestinations(){
-  const url = API_ENDPOINT + '?action=listDest';
-  const js = await jsonp(url);
+  const js = await jsonp(API_ENDPOINT + '?action=listDest');
   if(!js.ok || !Array.isArray(js.dests)) throw new Error('listDest_failed');
 
   destBox.innerHTML='';
@@ -300,8 +295,6 @@ $('#f').addEventListener('submit',(e)=>{
       const f = queue[i];
 
       const packed = await packToLimit(f, MAX_BYTES);
-
-      // トークン：このファイルの結果照会キー
       const token = makeToken_();
 
       const payload = {
@@ -316,7 +309,7 @@ $('#f').addEventListener('submit',(e)=>{
         }]
       };
 
-      // no-corsで投げる（レスポンスは読めない）
+      // no-cors（レスポンスは読まない）
       await fetch(API_ENDPOINT, {
         method:'POST',
         mode:'no-cors',
@@ -324,7 +317,7 @@ $('#f').addEventListener('submit',(e)=>{
         body: JSON.stringify(payload)
       });
 
-      // status を JSONP で待つ
+      // statusをJSONPで待つ
       const st = await waitStatus_(token, 25000);
       if(!st.ok){
         sending.style.display='none';
@@ -352,7 +345,7 @@ async function waitStatus_(token, timeoutMs){
   while(Date.now()-start < timeoutMs){
     const js = await jsonp(API_ENDPOINT + '?action=status&token=' + encodeURIComponent(token));
     if(js && js.ok) return js;
-    if(js && js.error) return js;       // 明確な失敗
+    if(js && js.error) return js;
     await sleep_(700);
   }
   return { ok:false, error:'timeout' };
@@ -373,14 +366,12 @@ function render(){
   thumbs.innerHTML='';
   if(!requireKey()) return;
 
-  // 8枚制限
   if(queue.length>MAX_FILES){
     msgBad(`最大 ${MAX_FILES} 枚までです（今 ${queue.length} 枚）。減らしてください。`);
     sendBtn.disabled=true;
     return;
   }
 
-  // 送信先未選択
   if(getSelectedDestIds().length===0){
     precheck.className='msg msg-info';
     precheck.textContent='送信先を選んでください。';
@@ -412,13 +403,11 @@ function render(){
   });
   document.querySelectorAll('.remove').forEach(b=>b.onclick=e=>{ queue.splice(Number(e.currentTarget.dataset.i),1); render(); });
 
-  // MIME
   if(queue.some(f=>!ALLOW_MIME.includes((f.type||'').toLowerCase()))){
     msgBad('送信できない形式が含まれています（jpeg/png/pdfのみ）。');
     sendBtn.disabled=true; return;
   }
 
-  // PDF（非画像）は20MB超ならNG
   const overs = queue.filter(f=>!(f.type||'').startsWith('image/') && f.size>MAX_BYTES);
   if(overs.length){
     msgBad('PDFが上限（20MB）を超えています。分割して送ってください。');
@@ -430,14 +419,13 @@ function render(){
   precheck.innerHTML=`👍 送信できます。枚数：<strong>${queue.length}</strong>、合計：約<strong>${(sum/1024/1024).toFixed(1)}MB</strong>`;
   sendBtn.disabled = (getSelectedDestIds().length===0);
 }
-
 function msgBad(t){
   precheck.className='msg msg-bad';
   precheck.textContent=t;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&quot;',"'":'&#39;'}[c]));}
 
-/** ===== 20MB以内に収める最小限最適化（あなたの版を簡略） ===== */
+/** ===== 画像最適化（20MB以内に収める最小限） ===== */
 function readFileAsDataURL(file){ return new Promise((ok,ng)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ng; r.readAsDataURL(file); }); }
 function loadImage(url){ return new Promise((ok,ng)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ng; i.src=url; }); }
 async function hasAlphaChannel(img){
@@ -479,7 +467,6 @@ async function packToLimit(file,maxBytes){
     return { base64:out2.split(',')[1], mime:'image/jpeg' };
   }
 
-  // PNG透過あり：縮小のみ
   let ratio=Math.max(0.2, Math.sqrt(maxBytes/(Math.ceil(base64.length*3/4)))*0.95);
   let cw=Math.max(1,Math.round(img.width*ratio));
   let ch=Math.max(1,Math.round(img.height*ratio));
@@ -492,7 +479,6 @@ async function packToLimit(file,maxBytes){
     cw=Math.max(1,Math.round(cw*0.85));
     ch=Math.max(1,Math.round(ch*0.85));
   }
-  // 最終手段：JPEG化
   const c=document.createElement('canvas'); c.width=cw; c.height=ch;
   c.getContext('2d').drawImage(img,0,0,cw,ch);
   const out=c.toDataURL('image/jpeg',0.86);
@@ -506,7 +492,7 @@ async function packToLimit(file,maxBytes){
   await loadDestinations();
   render();
 })().catch(err=>{
-  msgBad('初期化に失敗しました。/exec URL とデプロイ設定を確認してください。');
+  msgBad('初期化に失敗しました。GitHubのキャッシュ/ServiceWorkerと、/exec URLを確認してください。');
   console.error(err);
 });
 </script>
