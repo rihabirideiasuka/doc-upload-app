@@ -322,7 +322,8 @@ $('#f').addEventListener('submit',(e)=>{
       if(!st.ok){
         sending.style.display='none';
         disableAll(false);
-        msgBad(`送信に失敗しました：${st.error || 'unknown'}`);
+        const d = (st.detail ? ` / ${st.detail}` : '');
+        msgBad(`送信に失敗しました：${st.error || 'unknown'}${d}`);
         return;
       }
     }
@@ -498,4 +499,5 @@ async function packToLimit(file,maxBytes){
 </script>
 </body>
 </html>
+
 
