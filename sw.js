@@ -8,23 +8,27 @@ const ASSETS = [
   './icons/maskable-512.png'
 ];
 
+// sw.js（キャッシュ全消去＆自己解除版）
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(()=>{}));
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  // Apps Script へのPOSTはキャッシュしない
-  if (e.request.method === 'POST') return;
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    // すべてのCacheを削除
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
 
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
-      // 同一オリジンだけ軽くキャッシュ
-      if (url.origin === location.origin) {
-        const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(()=>{});
-      }
-      return resp;
-    }))
-  );
+    // SWを解除
+    await self.registration.unregister();
+
+    // 開いているページを再読み込みさせる
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    clients.forEach(c => c.navigate(c.url));
+  })());
+});
+
+// いちおう素通し
+self.addEventListener('fetch', (e) => {
+  e.respondWith(fetch(e.request));
 });
