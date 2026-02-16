@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>書類アップロード</title>
 
-<link rel="manifest" href="./manifest.json">
-
 <style>
   *,*::before,*::after{box-sizing:border-box}
   :root{--primary:#1556d1;--danger:#ef5753;--ok:#137333;--fg:#111;--muted:#666;--bg:#f6f7fb;--card:#fff}
@@ -14,7 +12,7 @@
   .wrap{max-width:880px;margin:0 auto;padding:20px}
   .card{background:var(--card);border-radius:18px;box-shadow:0 2px 14px rgba(0,0,0,.06);padding:20px}
   h1{font-size:22px;margin:0 0 8px}
-  label{display:block;font-weight:800;margin:14px 0 6px}
+  label{display:block;font-weight:900;margin:14px 0 6px}
   input[type="text"]{width:100%;padding:14px 16px;border:1px solid #ddd;border-radius:14px;font-size:16px}
 
   .btn{appearance:none;border:0;border-radius:14px;padding:14px 16px;font-weight:900;font-size:16px;cursor:pointer;transition:transform .02s ease}
@@ -26,14 +24,12 @@
   .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
   .btn-bar{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
 
-  .hint{font-size:14px;color:var(--muted);margin:6px 0}
-  .mini{font-size:12px;color:var(--muted);margin-top:4px}
-
   .msg{padding:12px 14px;border-radius:12px;margin:10px 0;font-size:16px}
   .msg-ok{background:#e9f5ee;color:var(--ok);border:1px solid #bfe5cd}
   .msg-bad{background:#fdecec;color:#a12121;border:1px solid #f3c3c0}
   .msg-info{background:#eef3ff;color:#274291;border:1px solid #cfdcff}
 
+  .mini{font-size:12px;color:var(--muted);margin-top:4px}
   .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:10px}
   .thumb{background:#fafafa;border:1px solid #eee;border-radius:14px;overflow:hidden}
   .thumb img{width:100%;height:120px;object-fit:cover;display:block;background:#fff}
@@ -45,492 +41,474 @@
   .bar{width:40%;height:100%;background:var(--primary);animation:indef 1.2s infinite}
   @keyframes indef{0%{transform:translateX(-60%)}100%{transform:translateX(160%)}}
 
-  .done{display:none;margin-top:14px}.done.show{display:block}
-  .done h2{margin:0 0 6px;font-size:22px}
-
   /* 送信先 */
   .dest-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:8px 0 6px}
-  .dest-item{background:#f2f6ff;border:2px solid #d9e4ff;border-radius:16px;padding:14px 14px;display:flex;gap:10px;align-items:center;cursor:pointer;user-select:none}
+  .dest-item{background:#f2f6ff;border:2px solid #d9e4ff;border-radius:16px;padding:14px;display:flex;gap:10px;align-items:center;cursor:pointer;user-select:none}
   .dest-item input{width:22px;height:22px}
   .dest-item.active{border-color:#1556d1;background:#eaf0ff}
   .dest-title{font-weight:900;font-size:18px}
 
-  /* カメラモーダル */
+  /* カメラ */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:9999}
   .modal.show{display:flex}
   .cam{background:#000;width:100%;max-width:1000px;color:#fff;display:flex;flex-direction:column;height:100svh}
   .cam video{flex:1 1 auto;width:100%;object-fit:cover}
   .cam .controls{display:flex;gap:10px;justify-content:space-between;padding:12px;background:rgba(0,0,0,.6)}
-  .cam .btn{flex:1;padding:14px;border-radius:12px}
-
-  /* トースト */
-  .toast{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#e9f5ee;color:#0b6e3f;border:1px solid #bfe5cd;
-         padding:10px 14px;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:10000;display:none}
-  .toast.show{display:block;animation:fade 2.4s ease forwards}
-  @keyframes fade{0%{opacity:0;transform:translate(-50%,-6px)}10%{opacity:1;transform:translate(-50%,0)}90%{opacity:1}100%{opacity:0}}
+  .cam .btn{flex:1}
 </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>書類アップロード</h1>
+<div class="wrap">
+  <div class="card">
+    <h1>書類アップロード</h1>
 
-      <form id="f" autocomplete="off" novalidate>
-        <label>送信先（複数選択可）</label>
-        <div id="destBox" class="dest-box"></div>
-        <div class="mini">※ 選んだ部署すべてに同じファイルが保存されます。</div>
+    <form id="f" autocomplete="off" novalidate>
+      <label>送信先（複数選択可）</label>
+      <div id="destBox" class="dest-box"></div>
+      <div class="mini">※ 選んだ部署すべてに同じファイルが保存されます。</div>
 
-        <label>利用者名・CM名 等（任意）</label>
-        <input type="text" id="note" placeholder="例）山田 太郎／CM名／事業所名 など" />
+      <label>利用者名・CM名 等（任意）</label>
+      <input type="text" id="note" placeholder="例）山田 太郎／CM名／事業所名 など" />
 
-        <label>写真・PDF（最大 8 枚）</label>
-
-        <div class="btn-row">
-          <button type="button" class="btn btn-primary" id="pickBtn">📁 アルバムから選ぶ</button>
-          <button type="button" class="btn btn-primary" id="camBtn">📸 写真を撮る</button>
-        </div>
-
-        <div class="mini">※ 1ファイル上限：<strong>20MB</strong>（jpeg / png / pdf）</div>
-
-        <input id="pick" type="file" accept="image/jpeg,image/png,application/pdf" multiple style="display:none">
-        <input id="cameraFile" type="file" accept="image/*" capture="environment"
-               style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
-
-        <div class="btn-bar">
-          <button type="button" class="btn btn-danger" id="clearBtn">✖ すべて削除</button>
-        </div>
-
-        <div id="precheck" class="msg msg-info" role="status" aria-live="polite">準備中…</div>
-        <div class="thumbs" id="thumbs" aria-live="polite"></div>
-
-        <div class="btn-bar" style="margin-top:14px">
-          <button class="btn btn-primary" id="sendBtn" type="submit" disabled>⬆ 送信する</button>
-        </div>
-
-        <div id="sending" class="msg msg-info" style="display:none" role="status" aria-live="assertive">
-          ⏳ アップロード中です。画面を閉じないでください。
-          <div id="progText" class="mini" style="margin-top:6px"></div>
-          <div class="progress"><div class="bar"></div></div>
-        </div>
-
-        <div id="done" class="msg msg-ok done" role="status" aria-live="assertive">
-          <h2>✅ アップロードが完了しました</h2>
-          <div class="mini">必要なら別の送信先もチェックして、追加で送ってください。</div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- カメラモーダル -->
-  <div id="camModal" class="modal" aria-hidden="true">
-    <div class="cam" role="dialog" aria-label="カメラで撮影">
-      <video id="camVideo" autoplay playsinline></video>
-      <div class="controls">
-        <button type="button" class="btn" id="camClose">完了して閉じる</button>
-        <button type="button" class="btn btn-primary" id="camShot">撮影して追加</button>
+      <label>写真・PDF（最大 8 枚）</label>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="pickBtn">📁 アルバムから選ぶ</button>
+        <button type="button" class="btn btn-primary" id="camBtn">📸 写真を撮る</button>
       </div>
+      <div class="mini">※ 1ファイル上限：20MB（jpeg / png / pdf）</div>
+
+      <input id="pick" type="file" accept="image/jpeg,image/png,application/pdf" multiple style="display:none">
+      <input id="cameraFile" type="file" accept="image/*" capture="environment"
+             style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+
+      <div class="btn-bar">
+        <button type="button" class="btn btn-danger" id="clearBtn">✖ すべて削除</button>
+      </div>
+
+      <div id="precheck" class="msg msg-info" role="status">準備中…</div>
+      <div class="thumbs" id="thumbs"></div>
+
+      <div class="btn-bar" style="margin-top:14px">
+        <button class="btn btn-primary" id="sendBtn" type="submit" disabled>⬆ 送信する</button>
+      </div>
+
+      <div id="sending" class="msg msg-info" style="display:none">
+        ⏳ アップロード中です。画面を閉じないでください。
+        <div id="progText" class="mini" style="margin-top:6px"></div>
+        <div class="progress"><div class="bar"></div></div>
+      </div>
+
+      <div id="done" class="msg msg-ok" style="display:none">
+        <strong>✅ アップロードが完了しました</strong>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- カメラモーダル -->
+<div id="camModal" class="modal" aria-hidden="true">
+  <div class="cam" role="dialog" aria-label="カメラで撮影">
+    <video id="camVideo" autoplay playsinline></video>
+    <div class="controls">
+      <button type="button" class="btn" id="camClose">閉じる</button>
+      <button type="button" class="btn btn-primary" id="camShot">撮影して追加</button>
     </div>
   </div>
-
-  <div id="toast" class="toast">✅ 追加しました</div>
+</div>
 
 <script>
-  /* ========= ここだけあなたの /exec に変更 ========= */
-  const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxeoxE-aJp0H5GCtxWAotUa-nbKo7LiMwSHrlcLBTrCkGkvV98iVn2uTeoQwx7OfH5B/exec';
-  /* ============================================== */
+/* ========= ここだけあなたの /exec URLに変更 ========= */
+const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyzk-A-tp_GHBAzEics5GZ1u5ReLdPB93Z_ormXtxElSB_Cdxin33qqgTwfbfvbFM59/exec';
+/* ============================================== */
 
-  const ALLOW_MIME = ['image/jpeg','image/png','application/pdf'];
-  const MAX_BYTES  = 20*1024*1024;
-  const MAX_FILES  = 8;
+const MAX_FILES = 8;
+const MAX_BYTES = 20*1024*1024;
+const ALLOW_MIME = ['image/jpeg','image/png','application/pdf'];
 
-  const KEY_STORAGE = 'upload_key_v1';
+const KEY_STORAGE = 'upload_key_v1';
+const queue = [];
+const $ = s => document.querySelector(s);
 
-  const queue = [];
-  const $ = s => document.querySelector(s);
+const destBox = $('#destBox');
+const pickInput = $('#pick');
+const cameraFile = $('#cameraFile');
+const thumbs = $('#thumbs');
+const precheck = $('#precheck');
+const sendBtn = $('#sendBtn');
+const sending = $('#sending');
+const progText = $('#progText');
+const doneBox = $('#done');
 
-  const pickInput = $('#pick');
-  const cameraFile = $('#cameraFile');
-  const thumbs = $('#thumbs');
-  const precheck = $('#precheck');
-  const sendBtn = $('#sendBtn');
-  const sending = $('#sending');
-  const doneBox = $('#done');
-  const toast = $('#toast');
-  const progText = $('#progText');
+const camModal = $('#camModal');
+const camVideo = $('#camVideo');
+const camClose = $('#camClose');
+const camShot  = $('#camShot');
+let camStream = null;
 
-  // 送信先
-  const destBox = document.getElementById('destBox');
+/** ===== 鍵：QRのURLに埋める → 端末保存 → URLから消す（入力ゼロ） ===== */
+const qs = new URLSearchParams(location.search);
+let AUTH_KEY = (qs.get('k') || '').trim();
+if (AUTH_KEY) {
+  try { localStorage.setItem(KEY_STORAGE, AUTH_KEY); } catch(_) {}
+  try { qs.delete('k'); history.replaceState(null,'', location.pathname + (qs.toString() ? '?' + qs.toString() : '')); } catch(_) {}
+} else {
+  try { AUTH_KEY = (localStorage.getItem(KEY_STORAGE) || '').trim(); } catch(_) {}
+}
 
-  // カメラ
-  const camModal = $('#camModal');
-  const camVideo = $('#camVideo');
-  const camClose = $('#camClose');
-  const camShot  = $('#camShot');
-  let camStream = null;
-
-  // ===== 鍵：QRに埋め込む → 端末保存 → URLから消す（入力ゼロ） =====
-  const qs = new URLSearchParams(location.search);
-  let AUTH_KEY = (qs.get('k') || '').trim();
-
-  if (AUTH_KEY) {
-    try { localStorage.setItem(KEY_STORAGE, AUTH_KEY); } catch(_) {}
-    try {
-      qs.delete('k');
-      const q = qs.toString();
-      history.replaceState(null, '', location.pathname + (q ? ('?' + q) : ''));
-    } catch(_) {}
-  } else {
-    try { AUTH_KEY = (localStorage.getItem(KEY_STORAGE) || '').trim(); } catch(_) {}
-  }
-
-  function requireAuthKey(){
-    if(!AUTH_KEY){
-      precheck.className='msg msg-bad';
-      precheck.innerHTML='⚠ この端末には送信権限がありません。配布されたQRコードから開いてください。';
-      setUIEnabled(false);
-      return false;
-    }
-    return true;
-  }
-
-  function setUIEnabled(enabled){
-    $('#pickBtn').disabled = !enabled;
-    $('#camBtn').disabled  = !enabled;
-    sendBtn.disabled       = !enabled;
-  }
-
-  function getSelectedDestIds(){
-    return Array.from(destBox.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value);
-  }
-
-  // ===== 送信先をAPIから取得（増えてもGitHub側を直さない） =====
-  async function loadDestinations(){
-    try{
-      const url = API_ENDPOINT + '?action=listDest';
-      const res = await fetch(url, { method:'GET' });
-      const js = await res.json();
-      if(!js.ok || !Array.isArray(js.dests)) throw new Error('listDest failed');
-
-      destBox.innerHTML='';
-      for(const d of js.dests){
-        const wrap = document.createElement('label');
-        wrap.className = 'dest-item';
-        wrap.innerHTML = `<input type="checkbox" value="${escapeHtml(d.id)}">
-                          <div class="dest-title">${escapeHtml(d.label)}</div>`;
-        const cb = wrap.querySelector('input');
-        cb.addEventListener('change', ()=> wrap.classList.toggle('active', cb.checked));
-        wrap.classList.toggle('active', cb.checked);
-        destBox.appendChild(wrap);
-      }
-    }catch(e){
-      // 最低限フォールバック（API不調でも壊れない）
-      destBox.innerHTML = `
-        <label class="dest-item"><input type="checkbox" value="tokuyo"><div class="dest-title">特養</div></label>
-        <label class="dest-item"><input type="checkbox" value="ss"><div class="dest-title">SS</div></label>
-        <label class="dest-item"><input type="checkbox" value="tsusho"><div class="dest-title">通所</div></label>
-      `;
-      destBox.querySelectorAll('.dest-item').forEach(w=>{
-        const cb=w.querySelector('input');
-        cb.addEventListener('change', ()=> w.classList.toggle('active', cb.checked));
-      });
-    }
-  }
-
-  // ===== UI操作 =====
-  $('#pickBtn').onclick = ()=>{
-    if(!requireAuthKey()) return;
-    if(getSelectedDestIds().length===0){ showToast('⚠ 送信先を選んでください'); return; }
-    pickInput.click();
-  };
-  $('#camBtn').onclick = ()=>{
-    if(!requireAuthKey()) return;
-    if(getSelectedDestIds().length===0){ showToast('⚠ 送信先を選んでください'); return; }
-    openCameraOrFallback();
-  };
-  $('#clearBtn').onclick = ()=>{ queue.length=0; render(); };
-
-  pickInput.addEventListener('change', e=>{
-    for(const f of e.target.files) queue.push(f);
-    e.target.value='';
-    render();
-  });
-  cameraFile.addEventListener('change', e=>{
-    if(e.target.files[0]) queue.push(e.target.files[0]);
-    e.target.value='';
-    render();
-  });
-
-  // ===== カメラ起動 =====
-  async function openCameraOrFallback(){
-    if(!navigator.mediaDevices?.getUserMedia){ cameraFile.click(); return; }
-    try{
-      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal:'environment' } }, audio:false });
-      camVideo.srcObject = camStream;
-      if (camVideo.readyState < 2) await new Promise(ok => camVideo.addEventListener('loadeddata', ok, {once:true}));
-      camModal.classList.add('show');
-      camModal.setAttribute('aria-hidden','false');
-      document.body.style.overflow='hidden';
-    }catch(_){
-      cameraFile.click();
-    }
-  }
-  function stopCamera(){
-    if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
-    camVideo.srcObject = null;
-    camModal.classList.remove('show');
-    camModal.setAttribute('aria-hidden','true');
-    document.body.style.overflow='';
-  }
-  camClose.onclick = ()=>{ stopCamera(); render(); };
-
-  camShot.onclick = async ()=>{
-    if(!camStream) return;
-    try{
-      const blob = await snapFromVideo();
-      const d=new Date(), z=n=>String(n).padStart(2,'0');
-      const name=`${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.jpg`;
-      const fileLike = toFileLike(blob, name);
-      queue.push(fileLike);
-      showToast('✅ 追加しました');
-      render();
-    }catch(_){
-      showToast('⚠ 撮影に失敗しました（権限/ブラウザ確認）');
-    }
-  };
-
-  async function snapFromVideo(){
-    const w = camVideo.videoWidth || 1280;
-    const h = camVideo.videoHeight || 720;
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    const ctx = c.getContext('2d'); ctx.drawImage(camVideo, 0, 0, w, h);
-    return await blobFromCanvas(c, 'image/jpeg', 0.95);
-  }
-  async function blobFromCanvas(canvas, mime='image/jpeg', quality=0.95){
-    if (canvas.toBlob){
-      const b = await new Promise(res=>canvas.toBlob(res, mime, quality));
-      if (b) return b;
-    }
-    const dataUrl = canvas.toDataURL(mime, quality);
-    return await (await fetch(dataUrl)).blob();
-  }
-  function toFileLike(blob, name){
-    try{ return new File([blob], name, { type: blob.type||'image/jpeg' }); }
-    catch(_){ Object.defineProperty(blob,'name',{value:name}); return blob; }
-  }
-
-  // ===== 送信 =====
-  document.getElementById('f').addEventListener('submit', (e)=>{
-    e.preventDefault();
-    if(!requireAuthKey()) return;
-
-    const destIds = getSelectedDestIds();
-    if(destIds.length===0){ showToast('⚠ 送信先を選んでください'); return; }
-    if(queue.length===0) return;
-
-    (async ()=>{
-      setUIEnabled(false);
-      sending.style.display='block';
-      doneBox.classList.remove('show');
-      progText.textContent='';
-
-      const note = document.getElementById('note').value || '';
-      const total = queue.length;
-
-      for(let idx=0; idx<queue.length; idx++){
-        const f = queue[idx];
-        progText.textContent = `送信中：${idx+1}/${total}`;
-
-        const packed = await packToLimit(f, MAX_BYTES);
-        const payload = {
-          key: AUTH_KEY,
-          note,
-          destIds,
-          items: [{
-            name: (f.name || 'upload.bin'),
-            mime: packed.mime,
-            base64: packed.base64
-          }]
-        };
-
-        const res = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-
-        const txt = await res.text();
-        let js=null; try{ js=JSON.parse(txt); }catch(_){}
-        if(!js || !js.ok){
-          precheck.className='msg msg-bad';
-          precheck.innerHTML = `⚠ 送信に失敗しました（${escapeHtml((js && js.error) ? js.error : 'unknown')}）<br>通信状態を確認して、もう一度お試しください。`;
-          sending.style.display='none';
-          setUIEnabled(true);
-          return;
-        }
-      }
-
-      sending.style.display='none';
-      doneBox.classList.add('show');
-      queue.length = 0;
-      render();
-      setUIEnabled(true);
-    })();
-  });
-
-  // ===== 表示 =====
-  function render(){
-    thumbs.innerHTML='';
-    if(queue.length>0) doneBox.classList.remove('show');
-
-    if(!requireAuthKey()){ return; }
-
-    // 8枚制限（外部向けに事故を減らす）
-    if(queue.length > MAX_FILES){
-      precheck.className='msg msg-bad';
-      precheck.innerHTML = `⚠ 最大 ${MAX_FILES} 枚までです。<br>いま ${queue.length} 枚あります。減らしてください。`;
-      sendBtn.disabled = true;
-      return;
-    }
-
-    // 送信先が未選択なら止める
-    if(getSelectedDestIds().length===0){
-      precheck.className='msg msg-info';
-      precheck.textContent='送信先を選んでください。';
-      sendBtn.disabled = true;
-    }
-
-    if(queue.length===0){
-      precheck.className='msg msg-info';
-      precheck.textContent='ファイルを選ぶか、写真を撮ってください。';
-      sendBtn.disabled = true;
-      return;
-    }
-
-    queue.forEach((f,i)=>{
-      const card=document.createElement('div'); card.className='thumb';
-      const img=document.createElement('img');
-      if((f.type||'').startsWith('image/')){ img.src=URL.createObjectURL(f); img.onload=()=>URL.revokeObjectURL(img.src); }
-      else { img.alt='PDF'; img.style.background='#eef3ff'; }
-      const meta=document.createElement('div'); meta.className='meta';
-      meta.innerHTML=`<div class="row"><strong>${escapeHtml(f.name || 'file')}</strong></div>
-                      <div class="row"><span>${(f.size/1024/1024).toFixed(1)} MB</span>
-                      <button type="button" class="remove" data-i="${i}">削除</button></div>`;
-      card.appendChild(img); card.appendChild(meta); thumbs.appendChild(card);
-    });
-    document.querySelectorAll('.remove').forEach(b=>b.onclick=e=>{ queue.splice(Number(e.currentTarget.dataset.i),1); render(); });
-
-    // MIMEチェック
-    if(queue.some(f=>!ALLOW_MIME.includes((f.type||'').toLowerCase()))){
-      precheck.className='msg msg-bad';
-      precheck.innerHTML='⚠ 送信できない形式が含まれています（jpeg / png / pdfのみ）。';
-      sendBtn.disabled=true; return;
-    }
-
-    // 非画像は20MB超なら即NG（画像は送信時に最適化）
-    const overs = queue.filter(f=>!(f.type||'').startsWith('image/') && f.size>MAX_BYTES);
-    if(overs.length){
-      precheck.className='msg msg-bad';
-      precheck.innerHTML=`⚠ PDFが上限（20MB）を超えています。`;
-      sendBtn.disabled=true; return;
-    }
-
-    const sum=queue.reduce((s,f)=>s+f.size,0);
-    precheck.className='msg msg-ok';
-    precheck.innerHTML=`👍 送信できます。枚数：<strong>${queue.length}</strong>、合計：約<strong>${(sum/1024/1024).toFixed(1)}MB</strong>`;
-    sendBtn.disabled = (getSelectedDestIds().length===0);
-  }
-
-  // ===== ユーティリティ =====
-  function showToast(msg){
-    toast.textContent=msg;
-    toast.classList.remove('show');
-    requestAnimationFrame(()=>{ toast.classList.add('show'); });
-  }
-  function readFileAsDataURL(file){ return new Promise((ok,ng)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ng; r.readAsDataURL(file); }); }
-  function loadImage(url){ return new Promise((ok,ng)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ng; i.src=url; }); }
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&quot;',"'":'&#39;'}[c])); }
-
-  // 透過判定（PNG用）
-  async function hasAlphaChannel(img){
-    const w = Math.min(img.width, 512), h = Math.min(img.height, 512);
-    const c = document.createElement('canvas'); c.width=w; c.height=h;
-    const ctx = c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-    const data = ctx.getImageData(0,0,w,h).data;
-    for(let i=3; i<data.length; i+=16){ if(data[i] < 255) return true; }
+function requireKey(){
+  if(!AUTH_KEY){
+    precheck.className='msg msg-bad';
+    precheck.textContent='⚠ この端末は有効化されていません。配布されたQRから開いてください。';
+    disableAll(true);
     return false;
   }
+  return true;
+}
 
-  // 20MB以内に収める最小限最適化
-  async function packToLimit(file, maxBytes){
-    if(!((file.type||'').startsWith('image/'))) {
-      const dataUrl = await readFileAsDataURL(file);
-      const base64 = dataUrl.split(',')[1];
-      return { base64, mime:(file.type||'application/octet-stream') };
+function disableAll(disabled){
+  $('#pickBtn').disabled = disabled;
+  $('#camBtn').disabled  = disabled;
+  sendBtn.disabled       = disabled;
+  $('#clearBtn').disabled= disabled;
+}
+
+function getSelectedDestIds(){
+  return Array.from(destBox.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value);
+}
+
+/** ===== JSONP（CORS回避） ===== */
+function jsonp(url){
+  return new Promise((resolve, reject)=>{
+    const cb = 'cb_' + Math.random().toString(36).slice(2);
+    const sep = url.includes('?') ? '&' : '?';
+    const s = document.createElement('script');
+    const timeout = setTimeout(()=>{ cleanup(); reject(new Error('jsonp_timeout')); }, 12000);
+
+    window[cb] = (data)=>{ cleanup(); resolve(data); };
+
+    function cleanup(){
+      clearTimeout(timeout);
+      try { delete window[cb]; } catch(_) { window[cb]=undefined; }
+      if (s.parentNode) s.parentNode.removeChild(s);
     }
 
-    // そのまま→OKなら通す
-    let dataUrl = await readFileAsDataURL(file);
-    let base64  = dataUrl.split(',')[1];
-    if (Math.ceil(base64.length*3/4) <= maxBytes) return { base64, mime:file.type||'image/jpeg' };
+    s.src = url + sep + 'callback=' + encodeURIComponent(cb) + '&_=' + Date.now();
+    s.onerror = ()=>{ cleanup(); reject(new Error('jsonp_error')); };
+    document.head.appendChild(s);
+  });
+}
 
-    const img = await loadImage(dataUrl);
-    const isPng = /^image\/png$/i.test(file.type||'');
-    const alpha = isPng ? await hasAlphaChannel(img) : false;
+/** ===== 送信先をスプレッドシートから取得（増減に強い） ===== */
+async function loadDestinations(){
+  const url = API_ENDPOINT + '?action=listDest';
+  const js = await jsonp(url);
+  if(!js.ok || !Array.isArray(js.dests)) throw new Error('listDest_failed');
 
-    // JPEG（または透過なし）: 品質調整→だめなら縮小
-    if (!isPng || !alpha){
-      let best = null;
-      for (const q of [0.92, 0.86, 0.80, 0.74]) {
-        const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-        c.getContext('2d').drawImage(img,0,0);
-        const out = c.toDataURL('image/jpeg', q);
-        const b64 = out.split(',')[1];
-        if (Math.ceil(b64.length*3/4) <= maxBytes) { best = { base64:b64, mime:'image/jpeg' }; break; }
-      }
-      if (best) return best;
-
-      const ratio = Math.max(0.2, Math.sqrt(maxBytes/(Math.ceil(base64.length*3/4))) * 0.92);
-      const cw = Math.max(1, Math.round(img.width*ratio));
-      const ch = Math.max(1, Math.round(img.height*ratio));
-      const c2 = document.createElement('canvas'); c2.width=cw; c2.height=ch;
-      c2.getContext('2d').drawImage(img,0,0,cw,ch);
-      const out2 = c2.toDataURL('image/jpeg', 0.86);
-      return { base64: out2.split(',')[1], mime:'image/jpeg' };
-    }
-
-    // PNG透過あり：縮小のみ
-    let ratio = Math.max(0.2, Math.sqrt(maxBytes/(Math.ceil(base64.length*3/4))) * 0.95);
-    let cw = Math.max(1, Math.round(img.width*ratio));
-    let ch = Math.max(1, Math.round(img.height*ratio));
-    for (let tries=0; tries<3; tries++){
-      const c = document.createElement('canvas'); c.width=cw; c.height=ch;
-      c.getContext('2d').drawImage(img,0,0,cw,ch);
-      const out = c.toDataURL('image/png');
-      const b64 = out.split(',')[1];
-      if (Math.ceil(b64.length*3/4) <= maxBytes) return { base64:b64, mime:'image/png' };
-      cw = Math.max(1, Math.round(cw * 0.85));
-      ch = Math.max(1, Math.round(ch * 0.85));
-    }
-
-    // 最終手段：JPEG化（透過は失われる）
-    const c = document.createElement('canvas'); c.width=cw; c.height=ch;
-    c.getContext('2d').drawImage(img,0,0,cw,ch);
-    const out = c.toDataURL('image/jpeg', 0.86);
-    return { base64: out.split(',')[1], mime:'image/jpeg' };
+  destBox.innerHTML='';
+  for(const d of js.dests){
+    const wrap = document.createElement('label');
+    wrap.className='dest-item';
+    wrap.innerHTML = `<input type="checkbox" value="${escapeHtml(d.id)}"><div class="dest-title">${escapeHtml(d.label)}</div>`;
+    const cb = wrap.querySelector('input');
+    cb.addEventListener('change', ()=> wrap.classList.toggle('active', cb.checked));
+    destBox.appendChild(wrap);
   }
+}
 
-  // ===== PWA（任意） =====
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+/** ===== UI操作 ===== */
+$('#pickBtn').onclick=()=>{
+  if(!requireKey()) return;
+  if(getSelectedDestIds().length===0){ msgBad('送信先を選んでください'); return; }
+  pickInput.click();
+};
+$('#camBtn').onclick=()=>{
+  if(!requireKey()) return;
+  if(getSelectedDestIds().length===0){ msgBad('送信先を選んでください'); return; }
+  openCameraOrFallback();
+};
+$('#clearBtn').onclick=()=>{ queue.length=0; render(); };
+
+pickInput.addEventListener('change',e=>{ for(const f of e.target.files) queue.push(f); e.target.value=''; render(); });
+cameraFile.addEventListener('change',e=>{ if(e.target.files[0]) queue.push(e.target.files[0]); e.target.value=''; render(); });
+
+/** ===== カメラ ===== */
+async function openCameraOrFallback(){
+  if(!navigator.mediaDevices?.getUserMedia){ cameraFile.click(); return; }
+  try{
+    camStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:{ideal:'environment'}}, audio:false });
+    camVideo.srcObject=camStream;
+    if(camVideo.readyState<2) await new Promise(ok=>camVideo.addEventListener('loadeddata',ok,{once:true}));
+    camModal.classList.add('show');
+    document.body.style.overflow='hidden';
+  }catch(_){
+    cameraFile.click();
   }
+}
+function stopCamera(){
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  camVideo.srcObject=null;
+  camModal.classList.remove('show');
+  document.body.style.overflow='';
+}
+camClose.onclick=()=>{ stopCamera(); render(); };
+camShot.onclick=async ()=>{
+  if(!camStream) return;
+  const blob = await snapFromVideo();
+  const d=new Date(), z=n=>String(n).padStart(2,'0');
+  const name=`${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.jpg`;
+  queue.push(toFileLike(blob,name));
+  render();
+};
+async function snapFromVideo(){
+  const w=camVideo.videoWidth||1280, h=camVideo.videoHeight||720;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  c.getContext('2d').drawImage(camVideo,0,0,w,h);
+  return await blobFromCanvas(c,'image/jpeg',0.95);
+}
+async function blobFromCanvas(canvas,mime='image/jpeg',quality=0.95){
+  if(canvas.toBlob){
+    const b=await new Promise(res=>canvas.toBlob(res,mime,quality));
+    if(b) return b;
+  }
+  return await (await fetch(canvas.toDataURL(mime,quality))).blob();
+}
+function toFileLike(blob,name){
+  try{ return new File([blob], name, {type:blob.type||'image/jpeg'}); }
+  catch(_){ Object.defineProperty(blob,'name',{value:name}); return blob; }
+}
 
-  // 初期化
+/** ===== 送信（POSTはno-cors、結果はstatus(JSONP)で確認） ===== */
+$('#f').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  if(!requireKey()) return;
+
+  const destIds = getSelectedDestIds();
+  if(destIds.length===0){ msgBad('送信先を選んでください'); return; }
+  if(queue.length===0) return;
+
   (async ()=>{
-    await loadDestinations();
-    setUIEnabled(true);
+    disableAll(true);
+    sending.style.display='block';
+    doneBox.style.display='none';
+
+    const note = $('#note').value || '';
+    const total = queue.length;
+
+    for(let i=0;i<queue.length;i++){
+      progText.textContent = `送信中：${i+1}/${total}`;
+      const f = queue[i];
+
+      const packed = await packToLimit(f, MAX_BYTES);
+
+      // トークン：このファイルの結果照会キー
+      const token = makeToken_();
+
+      const payload = {
+        key: AUTH_KEY,
+        token,
+        note,
+        destIds,
+        items: [{
+          name: (f.name || 'upload.bin'),
+          mime: packed.mime,
+          base64: packed.base64
+        }]
+      };
+
+      // no-corsで投げる（レスポンスは読めない）
+      await fetch(API_ENDPOINT, {
+        method:'POST',
+        mode:'no-cors',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+
+      // status を JSONP で待つ
+      const st = await waitStatus_(token, 25000);
+      if(!st.ok){
+        sending.style.display='none';
+        disableAll(false);
+        msgBad(`送信に失敗しました：${st.error || 'unknown'}`);
+        return;
+      }
+    }
+
+    sending.style.display='none';
+    doneBox.style.display='block';
+    queue.length=0;
     render();
-  })();
+    disableAll(false);
+  })().catch(err=>{
+    sending.style.display='none';
+    disableAll(false);
+    msgBad('通信に失敗しました。電波状況を確認して再度お試しください。');
+    console.error(err);
+  });
+});
+
+async function waitStatus_(token, timeoutMs){
+  const start = Date.now();
+  while(Date.now()-start < timeoutMs){
+    const js = await jsonp(API_ENDPOINT + '?action=status&token=' + encodeURIComponent(token));
+    if(js && js.ok) return js;
+    if(js && js.error) return js;       // 明確な失敗
+    await sleep_(700);
+  }
+  return { ok:false, error:'timeout' };
+}
+function sleep_(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function makeToken_(){
+  try{
+    const a = new Uint32Array(4);
+    crypto.getRandomValues(a);
+    return Array.from(a).map(x=>x.toString(16)).join('') + '_' + Date.now();
+  }catch(_){
+    return Math.random().toString(36).slice(2) + '_' + Date.now();
+  }
+}
+
+/** ===== 表示 ===== */
+function render(){
+  thumbs.innerHTML='';
+  if(!requireKey()) return;
+
+  // 8枚制限
+  if(queue.length>MAX_FILES){
+    msgBad(`最大 ${MAX_FILES} 枚までです（今 ${queue.length} 枚）。減らしてください。`);
+    sendBtn.disabled=true;
+    return;
+  }
+
+  // 送信先未選択
+  if(getSelectedDestIds().length===0){
+    precheck.className='msg msg-info';
+    precheck.textContent='送信先を選んでください。';
+    sendBtn.disabled=true;
+  }
+
+  if(queue.length===0){
+    precheck.className='msg msg-info';
+    precheck.textContent='ファイルを選ぶか、写真を撮ってください。';
+    sendBtn.disabled=true;
+    return;
+  }
+
+  queue.forEach((f,i)=>{
+    const card=document.createElement('div'); card.className='thumb';
+    const img=document.createElement('img');
+    if((f.type||'').startsWith('image/')){
+      img.src=URL.createObjectURL(f);
+      img.onload=()=>URL.revokeObjectURL(img.src);
+    }else{
+      img.alt='PDF';
+      img.style.background='#eef3ff';
+    }
+    const meta=document.createElement('div'); meta.className='meta';
+    meta.innerHTML=`<div class="row"><strong>${escapeHtml(f.name||'file')}</strong></div>
+                    <div class="row"><span>${(f.size/1024/1024).toFixed(1)}MB</span>
+                    <button type="button" class="remove" data-i="${i}">削除</button></div>`;
+    card.appendChild(img); card.appendChild(meta); thumbs.appendChild(card);
+  });
+  document.querySelectorAll('.remove').forEach(b=>b.onclick=e=>{ queue.splice(Number(e.currentTarget.dataset.i),1); render(); });
+
+  // MIME
+  if(queue.some(f=>!ALLOW_MIME.includes((f.type||'').toLowerCase()))){
+    msgBad('送信できない形式が含まれています（jpeg/png/pdfのみ）。');
+    sendBtn.disabled=true; return;
+  }
+
+  // PDF（非画像）は20MB超ならNG
+  const overs = queue.filter(f=>!(f.type||'').startsWith('image/') && f.size>MAX_BYTES);
+  if(overs.length){
+    msgBad('PDFが上限（20MB）を超えています。分割して送ってください。');
+    sendBtn.disabled=true; return;
+  }
+
+  const sum=queue.reduce((s,f)=>s+f.size,0);
+  precheck.className='msg msg-ok';
+  precheck.innerHTML=`👍 送信できます。枚数：<strong>${queue.length}</strong>、合計：約<strong>${(sum/1024/1024).toFixed(1)}MB</strong>`;
+  sendBtn.disabled = (getSelectedDestIds().length===0);
+}
+
+function msgBad(t){
+  precheck.className='msg msg-bad';
+  precheck.textContent=t;
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&quot;',"'":'&#39;'}[c]));}
+
+/** ===== 20MB以内に収める最小限最適化（あなたの版を簡略） ===== */
+function readFileAsDataURL(file){ return new Promise((ok,ng)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ng; r.readAsDataURL(file); }); }
+function loadImage(url){ return new Promise((ok,ng)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ng; i.src=url; }); }
+async function hasAlphaChannel(img){
+  const w=Math.min(img.width,512), h=Math.min(img.height,512);
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+  const d=ctx.getImageData(0,0,w,h).data;
+  for(let i=3;i<d.length;i+=16){ if(d[i]<255) return true; }
+  return false;
+}
+async function packToLimit(file,maxBytes){
+  if(!((file.type||'').startsWith('image/'))){
+    const dataUrl=await readFileAsDataURL(file);
+    return { base64:dataUrl.split(',')[1], mime:(file.type||'application/octet-stream') };
+  }
+
+  const dataUrl=await readFileAsDataURL(file);
+  let base64=dataUrl.split(',')[1];
+  if(Math.ceil(base64.length*3/4)<=maxBytes) return { base64, mime:file.type||'image/jpeg' };
+
+  const img=await loadImage(dataUrl);
+  const isPng=/^image\/png$/i.test(file.type||'');
+  const alpha=isPng ? await hasAlphaChannel(img) : false;
+
+  if(!isPng || !alpha){
+    for(const q of [0.92,0.86,0.80,0.74]){
+      const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
+      c.getContext('2d').drawImage(img,0,0);
+      const out=c.toDataURL('image/jpeg',q);
+      const b64=out.split(',')[1];
+      if(Math.ceil(b64.length*3/4)<=maxBytes) return { base64:b64, mime:'image/jpeg' };
+    }
+    const ratio=Math.max(0.2, Math.sqrt(maxBytes/(Math.ceil(base64.length*3/4)))*0.92);
+    const cw=Math.max(1,Math.round(img.width*ratio));
+    const ch=Math.max(1,Math.round(img.height*ratio));
+    const c2=document.createElement('canvas'); c2.width=cw; c2.height=ch;
+    c2.getContext('2d').drawImage(img,0,0,cw,ch);
+    const out2=c2.toDataURL('image/jpeg',0.86);
+    return { base64:out2.split(',')[1], mime:'image/jpeg' };
+  }
+
+  // PNG透過あり：縮小のみ
+  let ratio=Math.max(0.2, Math.sqrt(maxBytes/(Math.ceil(base64.length*3/4)))*0.95);
+  let cw=Math.max(1,Math.round(img.width*ratio));
+  let ch=Math.max(1,Math.round(img.height*ratio));
+  for(let t=0;t<3;t++){
+    const c=document.createElement('canvas'); c.width=cw; c.height=ch;
+    c.getContext('2d').drawImage(img,0,0,cw,ch);
+    const out=c.toDataURL('image/png');
+    const b64=out.split(',')[1];
+    if(Math.ceil(b64.length*3/4)<=maxBytes) return { base64:b64, mime:'image/png' };
+    cw=Math.max(1,Math.round(cw*0.85));
+    ch=Math.max(1,Math.round(ch*0.85));
+  }
+  // 最終手段：JPEG化
+  const c=document.createElement('canvas'); c.width=cw; c.height=ch;
+  c.getContext('2d').drawImage(img,0,0,cw,ch);
+  const out=c.toDataURL('image/jpeg',0.86);
+  return { base64:out.split(',')[1], mime:'image/jpeg' };
+}
+
+// 初期化
+(async ()=>{
+  disableAll(false);
+  if(!requireKey()) return;
+  await loadDestinations();
+  render();
+})().catch(err=>{
+  msgBad('初期化に失敗しました。/exec URL とデプロイ設定を確認してください。');
+  console.error(err);
+});
 </script>
 </body>
 </html>
